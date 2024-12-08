@@ -1,15 +1,38 @@
 import axios from 'axios';
+import { supabase } from './supabase';
 
 const TWITTER_API_BASE = 'https://api.twitter.com/2';
-const TWITTER_BEARER_TOKEN = "AAAAAAAAAAAAAAAAAAAAAPQyxAEAAAAAGvF7FOmIBXKgCOOXh9guMAHdQOc%3D488j1KwV4qFQgRkDNhmCBmY9OXbfbGLjByU37gqttsUT5di1WX";
+
+export const signInWithTwitter = async () => {
+  try {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'twitter',
+      options: {
+        redirectTo: 'https://cheshraidtoearn.netlify.app',
+        scopes: 'tweet.read tweet.write users.read'
+      }
+    });
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error signing in with Twitter:', error);
+    throw error;
+  }
+};
 
 export const fetchGrinMentions = async () => {
   try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.provider_token) {
+      throw new Error('No Twitter access token found. Please connect your Twitter account.');
+    }
+
     const response = await axios.get(
       `${TWITTER_API_BASE}/tweets/search/recent?query=$grin OR #grin OR @cheshiregpt`,
       {
         headers: {
-          'Authorization': `Bearer ${TWITTER_BEARER_TOKEN}`
+          'Authorization': `Bearer ${session.provider_token}`
         }
       }
     );
@@ -20,20 +43,47 @@ export const fetchGrinMentions = async () => {
   }
 };
 
-export const postTweet = async (content: string, token: string) => {
+export const postTweet = async (content: string) => {
   try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.provider_token) {
+      throw new Error('No Twitter access token found. Please connect your Twitter account.');
+    }
+
     const response = await axios.post(
       `${TWITTER_API_BASE}/tweets`,
       { text: content },
       {
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${session.provider_token}`
         }
       }
     );
     return response.data;
   } catch (error) {
     console.error('Error posting tweet:', error);
+    throw error;
+  }
+};
+
+export const getTwitterProfile = async () => {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.provider_token) {
+      throw new Error('No Twitter access token found. Please connect your Twitter account.');
+    }
+
+    const response = await axios.get(
+      `${TWITTER_API_BASE}/users/me`,
+      {
+        headers: {
+          'Authorization': `Bearer ${session.provider_token}`
+        }
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching Twitter profile:', error);
     throw error;
   }
 };

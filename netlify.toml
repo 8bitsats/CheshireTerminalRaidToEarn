@@ -9,3 +9,10 @@
 
 [build.environment]
   NODE_VERSION = "18"
+  VITE_SITE_URL = "https://cheshraidtoearn.netlify.app"
+
+[[redirects]]
+  from = "/auth/callback"
+  to = "/"
+  status = 200
+  force = true

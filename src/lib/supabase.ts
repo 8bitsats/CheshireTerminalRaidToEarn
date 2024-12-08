@@ -13,10 +13,15 @@ export type User = {
   id: string;
   wallet_address: string;
   username: string | null;
+  twitter_handle: string | null;
+  twitter_oauth_token: string | null;
+  twitter_oauth_secret: string | null;
   created_at: string;
   last_login: string;
   raid_points: number;
   total_raids: number;
+  is_raid_registered: boolean;
+  raid_registration_date: string | null;
 };
 
 // Auth helper functions

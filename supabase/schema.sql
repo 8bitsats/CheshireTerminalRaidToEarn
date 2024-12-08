@@ -4,6 +4,8 @@ CREATE TABLE IF NOT EXISTS users (
     wallet_address TEXT UNIQUE NOT NULL,
     username TEXT,
     twitter_handle TEXT,
+    twitter_oauth_token TEXT,
+    twitter_oauth_secret TEXT,
     is_raid_registered BOOLEAN DEFAULT false,
     raid_registration_date TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,

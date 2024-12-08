@@ -9,12 +9,10 @@ import { useCheshireBalance } from '../hooks/useCheshireBalance';
 
 const RaidRegistration = () => {
   const { connected, publicKey } = useWallet();
-  const { user, loading: authLoading } = useSupabaseAuth();
+  const { user, loading: authLoading, twitterConnected, connectTwitter } = useSupabaseAuth();
   const { balance: grinBalance, loading: balanceLoading } = useCheshireBalance();
   
   const [step, setStep] = useState(1);
-  const [twitterConnected, setTwitterConnected] = useState(false);
-  const [twitterHandle, setTwitterHandle] = useState('');
   const [isRegistered, setIsRegistered] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,13 +28,16 @@ const RaidRegistration = () => {
     }
   }, [grinBalance]);
 
-  const connectTwitter = async () => {
+  useEffect(() => {
+    if (twitterConnected) {
+      setStep(3);
+    }
+  }, [twitterConnected]);
+
+  const handleTwitterConnect = async () => {
     try {
       setError(null);
-      // Twitter OAuth logic would go here
-      setTwitterConnected(true);
-      setTwitterHandle('@user');
-      setStep(3);
+      await connectTwitter();
     } catch (err) {
       setError('Failed to connect Twitter account');
       console.error('Failed to connect Twitter:', err);
@@ -49,11 +50,10 @@ const RaidRegistration = () => {
     try {
       setError(null);
       
-      // Update user record with Twitter handle and raid registration
+      // Update user record with raid registration
       const { error: updateError } = await supabase
         .from('users')
         .update({
-          twitter_handle: twitterHandle,
           is_raid_registered: true,
           raid_registration_date: new Date().toISOString()
         })
@@ -185,14 +185,14 @@ const RaidRegistration = () => {
             <CardContent>
               {connected && grinBalance >= 1 && !twitterConnected ? (
                 <button
-                  onClick={connectTwitter}
+                  onClick={handleTwitterConnect}
                   className="w-full py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors"
                 >
                   Connect Twitter Account
                 </button>
               ) : twitterConnected ? (
                 <div className="flex items-center justify-between text-white">
-                  <span>{twitterHandle}</span>
+                  <span>{user?.twitter_handle}</span>
                   <Check className="text-green-400" />
                 </div>
               ) : null}

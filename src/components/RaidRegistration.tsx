@@ -15,6 +15,7 @@ const RaidRegistration = () => {
   const [step, setStep] = useState(1);
   const [isRegistered, setIsRegistered] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isConnectingTwitter, setIsConnectingTwitter] = useState(false);
 
   useEffect(() => {
     if (connected && publicKey) {
@@ -37,10 +38,13 @@ const RaidRegistration = () => {
   const handleTwitterConnect = async () => {
     try {
       setError(null);
+      setIsConnectingTwitter(true);
       await connectTwitter();
     } catch (err) {
-      setError('Failed to connect Twitter account');
-      console.error('Failed to connect Twitter:', err);
+      console.error('Twitter connection error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to connect Twitter account. Please try again.');
+    } finally {
+      setIsConnectingTwitter(false);
     }
   };
 
@@ -89,8 +93,12 @@ const RaidRegistration = () => {
         </div>
 
         {error && (
-          <div className="bg-red-900/20 border border-red-500 rounded-lg p-4 text-red-400">
-            {error}
+          <div className="bg-red-900/20 border border-red-500 rounded-lg p-4 text-red-400 flex items-start gap-2">
+            <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="font-semibold">Error</p>
+              <p>{error}</p>
+            </div>
           </div>
         )}
 
@@ -186,9 +194,17 @@ const RaidRegistration = () => {
               {connected && grinBalance >= 1 && !twitterConnected ? (
                 <button
                   onClick={handleTwitterConnect}
-                  className="w-full py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors"
+                  disabled={isConnectingTwitter}
+                  className="w-full py-2 bg-purple-500 hover:bg-purple-600 disabled:bg-purple-500/50 text-white rounded-lg transition-colors flex items-center justify-center gap-2"
                 >
-                  Connect Twitter Account
+                  {isConnectingTwitter ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                      Connecting...
+                    </>
+                  ) : (
+                    'Connect Twitter Account'
+                  )}
                 </button>
               ) : twitterConnected ? (
                 <div className="flex items-center justify-between text-white">

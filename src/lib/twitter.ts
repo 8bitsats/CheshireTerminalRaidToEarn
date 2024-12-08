@@ -3,21 +3,39 @@ import { supabase } from './supabase';
 
 const TWITTER_API_BASE = 'https://api.twitter.com/2';
 
+interface TwitterError {
+  message: string;
+  code?: string;
+  details?: unknown;
+}
+
 export const signInWithTwitter = async () => {
   try {
+    console.log('Starting Twitter OAuth flow...');
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'twitter',
       options: {
         redirectTo: 'https://cheshraidtoearn.netlify.app',
-        scopes: 'tweet.read tweet.write users.read'
+        scopes: 'tweet.read tweet.write users.read offline.access',
       }
     });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase OAuth error:', error);
+      throw error;
+    }
+
+    console.log('OAuth response:', data);
     return data;
-  } catch (error) {
-    console.error('Error signing in with Twitter:', error);
-    throw error;
+  } catch (err) {
+    const error = err as TwitterError;
+    console.error('Detailed Twitter sign-in error:', {
+      error,
+      message: error.message || 'Unknown error occurred',
+      code: error.code,
+      details: error.details
+    });
+    throw new Error(error.message || 'Failed to connect Twitter account');
   }
 };
 
@@ -25,6 +43,7 @@ export const fetchGrinMentions = async () => {
   try {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.provider_token) {
+      console.error('No provider token found in session:', session);
       throw new Error('No Twitter access token found. Please connect your Twitter account.');
     }
 
@@ -37,9 +56,10 @@ export const fetchGrinMentions = async () => {
       }
     );
     return response.data;
-  } catch (error) {
+  } catch (err) {
+    const error = err as TwitterError;
     console.error('Error fetching GRIN mentions:', error);
-    throw error;
+    throw new Error(error.message || 'Failed to fetch GRIN mentions');
   }
 };
 
@@ -47,6 +67,7 @@ export const postTweet = async (content: string) => {
   try {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.provider_token) {
+      console.error('No provider token found in session:', session);
       throw new Error('No Twitter access token found. Please connect your Twitter account.');
     }
 
@@ -60,9 +81,10 @@ export const postTweet = async (content: string) => {
       }
     );
     return response.data;
-  } catch (error) {
+  } catch (err) {
+    const error = err as TwitterError;
     console.error('Error posting tweet:', error);
-    throw error;
+    throw new Error(error.message || 'Failed to post tweet');
   }
 };
 
@@ -70,6 +92,7 @@ export const getTwitterProfile = async () => {
   try {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.provider_token) {
+      console.error('No provider token found in session:', session);
       throw new Error('No Twitter access token found. Please connect your Twitter account.');
     }
 
@@ -82,8 +105,9 @@ export const getTwitterProfile = async () => {
       }
     );
     return response.data;
-  } catch (error) {
+  } catch (err) {
+    const error = err as TwitterError;
     console.error('Error fetching Twitter profile:', error);
-    throw error;
+    throw new Error(error.message || 'Failed to fetch Twitter profile');
   }
 };
